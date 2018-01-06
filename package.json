@@ -1,0 +1,14 @@
+{
+    "name": "saywhat",
+    "version": "1.0.0",
+    "description": "saywhat backend",
+    "main": "app.js",
+    "scripts": {
+      "start": "node app.js"
+    },
+    "dependencies": {
+      "express": "",
+      "mysql": "",
+      "body-parser": ""
+    }
+  }
