@@ -168,8 +168,10 @@ function addComment(com, pageVersion, paragraphID, res) {
             console.error("Could not get connection from pool");
             console.error(err);
         } else {
+            let date = new Date(Date.now());
+            let formattedDate = parseInt(date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
             connection.query("INSERT INTO comments (comment,rating,position,pageVersion,url,date,paragraphID) VALUES (?)", [
-                [com.comment, !!com.rating ? com.rating : null, com.position, pageVersion, com.url, Date.now(), paragraphID]
+                [com.comment, !!com.rating ? com.rating : null, com.position, pageVersion, com.url, formattedDate, paragraphID]
             ], function (err, results) {
                 if (err) {
                     console.error("Error while inserting new comment into COMMENTS table");
@@ -192,8 +194,10 @@ function editComment(com, res) {
             console.error("Could not get connection from pool");
             console.error(err);
         } else {
+            let date = new Date(Date.now());
+            let formattedDate = parseInt(date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
             connection.query("UPDATE comments SET comment = ?,rating = ?,position = ?,date = ? WHERE commentID = " + com.id, [
-                com.comment, com.rating, com.position, Date.now()
+                com.comment, com.rating, com.position, formattedDate
             ], function (err, results) {
                 if (err) {
                     console.error("Error while updating comment in COMMENTS table");
