@@ -16,6 +16,7 @@ let pool = mysql.createPool({
     database: dburl.split('@')[1].split('/')[1]
 });
 
+
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({
     extended: true
@@ -122,7 +123,7 @@ function updatePage(url, paragraphs) {
                                         console.error(err);
                                         connection.release();
                                     } else {
-                                        if (!results.length) {
+                                        if (!!results.length) {
                                             let active = [];
                                             let nonActive = [];
                                             for (i = 0; i < results.length; i++) {
@@ -132,9 +133,15 @@ function updatePage(url, paragraphs) {
                                                     nonActive.push(results[i].paragraphID);
                                                 }
                                             }
+                                            if (!active.length) {
+                                                active.push('');
+                                            }
+                                            if (!nonActive.length) {
+                                                nonActive.push('');
+                                            }
                                             connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [
-                                                [active],
-                                                [nonActive]
+                                                active,
+                                                nonActive
                                             ], function (err, results) {
                                                 if (err) {
                                                     console.error("Error while updating active status in paragraphs table");
@@ -160,7 +167,7 @@ function updatePage(url, paragraphs) {
                                         console.error(err);
                                         connection.release();
                                     } else {
-                                        if (!results.length) {
+                                        if (!!results.length) {
                                             let active = [];
                                             let nonActive = [];
                                             for (i = 0; i < results.length; i++) {
@@ -170,9 +177,15 @@ function updatePage(url, paragraphs) {
                                                     nonActive.push(results[i].paragraphID);
                                                 }
                                             }
+                                            if (!active.length) {
+                                                active.push('');
+                                            }
+                                            if (!nonActive.length) {
+                                                nonActive.push('');
+                                            }
                                             connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [
-                                                [active],
-                                                [nonActive]
+                                                active,
+                                                nonActive
                                             ], function (err, results) {
                                                 if (err) {
                                                     console.error("Error while updating active status in paragraphs table");
