@@ -170,8 +170,8 @@ function addComment(com, pageVersion, paragraphID, res) {
         } else {
             let date = new Date(Date.now());
             let formattedDate = parseInt(date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
-            connection.query("INSERT INTO comments (comment,rating,position,pageVersion,url,date,paragraphID) VALUES (?)", [
-                [com.comment, !!com.rating ? com.rating : null, com.position, pageVersion, com.url, formattedDate, paragraphID]
+            connection.query("INSERT INTO comments (comment,rating,position,pageVersion,url,pageName,date,paragraphID) VALUES (?)", [
+                [com.comment, !!com.rating ? com.rating : null, com.position, pageVersion, com.url, /[^/]*$/.exec(com.url)[0], formattedDate, paragraphID]
             ], function (err, results) {
                 if (err) {
                     console.error("Error while inserting new comment into COMMENTS table");
