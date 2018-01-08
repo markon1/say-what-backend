@@ -8,6 +8,7 @@ let author_password = process.env.AUTHOR_PASSWORD;
 let dburl = process.env.CLEARDB_DATABASE_URL.replace('mysql://', "").replace('?reconnect=true', '');
 
 let pool = mysql.createPool({
+    multipleStatements: true,
     connectionLimit: 5,
     host: dburl.split('@')[1].split('/')[0],
     user: dburl.split('@')[0].split(':')[0],
@@ -25,9 +26,9 @@ app.use(function (req, res, next) { // allow all origins
     next();
 });
 
-app.post('/updatePageVersion', function (req, res) {
+app.post('/updatePage', function (req, res) {
     if (req.body.password == author_password) {
-        updatePageVersion(req.body.pageURL);
+        updatePage(req.body.pageURL, req.body.paragraphs);
     }
 });
 
@@ -91,7 +92,7 @@ app.post('/getComments', function (req, res) {
     getComments(req.body.pageURL, res);
 });
 
-function updatePageVersion(url) {
+function updatePage(url, paragraphs) {
     pool.getConnection(function (err, connection) {
         if (err) {
             console.error("Could not get connection from pool");
@@ -110,20 +111,75 @@ function updatePageVersion(url) {
                             if (err) {
                                 console.error("Error while inserting new page into PAGES table");
                                 console.error(err);
+                                connection.release();
+                            } else {
+                                connection.query("SELECT * FROM paragraphs p WHERE p.pageURL = ?", [url], function (err, results) {
+                                    if (err) {
+                                        console.error("Error while fetching paragraphs from PARAGRAPHS table");
+                                        console.error(err);
+                                        connection.release();
+                                    } else {
+                                        if (!results.length) {
+                                            let active = [];
+                                            let nonActive = [];
+                                            for (i = 0; i < results.length; i++) {
+                                                if (paragraphs.includes(results[i].paragraphContent)) {
+                                                    active.push(results[i].paragraphID);
+                                                } else {
+                                                    nonActive.push(results[i].paragraphID);
+                                                }
+                                            }
+                                            connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [[active], [nonActive]], function (err, results) {
+                                                if (err) {
+                                                    console.error("Error while updating active status in paragraphs table");
+                                                    console.error(err);
+                                                }
+                                                connection.release();
+                                            });
+                                        }
+                                    }
+                                });
                             }
-                            connection.release();
                         });
                     } else {
                         connection.query("UPDATE pages SET currentVersion = ? WHERE url = ?", [parseInt(results[0].currentVersion) + 1, url], function (err, results) {
                             if (err) {
                                 console.error("Error while inserting new page into PAGES table");
                                 console.error(err);
+                                connection.release();
+                            } else {
+                                connection.query("SELECT * FROM paragraphs p WHERE p.pageURL = ?", [url], function (err, results) {
+                                    if (err) {
+                                        console.error("Error while fetching paragraphs from PARAGRAPHS table");
+                                        console.error(err);
+                                        connection.release();
+                                    } else {
+                                        if (!results.length) {
+                                            let active = [];
+                                            let nonActive = [];
+                                            for (i = 0; i < results.length; i++) {
+                                                if (paragraphs.includes(results[i].paragraphContent)) {
+                                                    active.push(results[i].paragraphID);
+                                                } else {
+                                                    nonActive.push(results[i].paragraphID);
+                                                }
+                                            }
+                                            connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [[active], [nonActive]], function (err, results) {
+                                                if (err) {
+                                                    console.error("Error while updating active status in paragraphs table");
+                                                    console.error(err);
+                                                }
+                                                connection.release();
+                                            });
+                                        }
+                                    }
+                                });
                             }
-                            connection.release();
                         });
                     }
                 }
             });
+
         }
     });
 }
