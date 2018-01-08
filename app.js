@@ -27,6 +27,9 @@ app.use(function (req, res, next) { // allow all origins
 });
 
 app.post('/updatePage', function (req, res) {
+    res.json({
+        correct: true
+    });
     if (req.body.password == author_password) {
         updatePage(req.body.pageURL, req.body.paragraphs);
     }
@@ -129,7 +132,10 @@ function updatePage(url, paragraphs) {
                                                     nonActive.push(results[i].paragraphID);
                                                 }
                                             }
-                                            connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [[active], [nonActive]], function (err, results) {
+                                            connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [
+                                                [active],
+                                                [nonActive]
+                                            ], function (err, results) {
                                                 if (err) {
                                                     console.error("Error while updating active status in paragraphs table");
                                                     console.error(err);
@@ -164,7 +170,10 @@ function updatePage(url, paragraphs) {
                                                     nonActive.push(results[i].paragraphID);
                                                 }
                                             }
-                                            connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [[active], [nonActive]], function (err, results) {
+                                            connection.query("UPDATE paragraphs SET active = 1 WHERE paragraphID IN (?);UPDATE paragraphs SET active = 0 WHERE paragraphID IN (?)", [
+                                                [active],
+                                                [nonActive]
+                                            ], function (err, results) {
                                                 if (err) {
                                                     console.error("Error while updating active status in paragraphs table");
                                                     console.error(err);
