@@ -9,13 +9,12 @@ let dburl = process.env.CLEARDB_DATABASE_URL.replace('mysql://', "").replace('?r
 
 let pool = mysql.createPool({
     multipleStatements: true,
-    connectionLimit: 5,
+    connectionLimit: 10,
     host: dburl.split('@')[1].split('/')[0],
     user: dburl.split('@')[0].split(':')[0],
     password: dburl.split('@')[0].split(':')[1],
     database: dburl.split('@')[1].split('/')[1]
 });
-
 
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({
@@ -94,6 +93,24 @@ app.post('/deleteComment', function (req, res) {
 
 app.post('/getComments', function (req, res) {
     getComments(req.body.pageURL, res);
+});
+
+app.post('/getAll', function (req, res) {
+    if (req.body.password == author_password) {
+        getAll(res);
+    }
+});
+
+app.post('/getAllCurrent', function (req, res) {
+    if (req.body.password == author_password) {
+        getAllCurrent(res);
+    }
+});
+
+app.post('/getCurrentPage', function (req, res) {
+    if (req.body.password == author_password) {
+        getCurrentPage(req.body.url,res);
+    }
 });
 
 function updatePage(url, paragraphs) {
@@ -248,7 +265,7 @@ function addComment(com, pageVersion, paragraphID, res) {
         } else {
             let date = new Date(Date.now());
             let formattedDate = parseInt(date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
-            connection.query("INSERT INTO comments (comment,rating,position,pageVersion,url,pageName,date,paragraphID) VALUES (?)", [
+            connection.query("INSERT INTO comments (comment,rating,position,pageVersion,url,pageName,date,paragraphId) VALUES (?)", [
                 [com.comment, !!com.rating ? com.rating : null, com.position, pageVersion, com.url, /[^/]*$/.exec(com.url)[0], formattedDate, paragraphID]
             ], function (err, results) {
                 if (err) {
@@ -314,13 +331,12 @@ function deleteComment(commentID, res) {
 }
 
 function getComments(pageURL, res) {
-    console.log(pageURL);
     pool.getConnection(function (err, connection) {
         if (err) {
             console.error("Could not get connection from pool");
             console.error(err);
         } else {
-            connection.query("SELECT * FROM comments c JOIN paragraphs p ON c.paragraphID = p.paragraphID WHERE c.url = ?", [pageURL], function (err, results) {
+            connection.query("SELECT * FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID WHERE c.url = ?", [pageURL], function (err, results) {
                 if (err) {
                     console.error("Error while fetching comments from COMMENTS table");
                     console.error(err);
@@ -329,6 +345,66 @@ function getComments(pageURL, res) {
                     res.json({
                         comments: results
                     });
+                    connection.release();
+                }
+            });
+        }
+    });
+}
+
+function getAll(res){
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            console.error("Could not get connection from pool");
+            console.error(err);
+        } else {
+            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,p.paragraphContent,p.active FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID", function (err, results) {
+                if (err) {
+                    console.error("Error while fetching comments from COMMENTS table");
+                    console.error(err);
+                    connection.release();
+                } else {
+                    res.json(results);
+                    connection.release();
+                }
+            });
+        }
+    });
+}
+
+function getAllCurrent(res){
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            console.error("Could not get connection from pool");
+            console.error(err);
+        } else {
+            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,p.paragraphContent FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID WHERE p.active = 1", function (err, results) {
+                if (err) {
+                    console.error("Error while fetching comments from COMMENTS table");
+                    console.error(err);
+                    connection.release();
+                } else {
+                    res.json(results);
+                    connection.release();
+                }
+            });
+        }
+    });
+}
+
+function getCurrentPage(pageURL, res) {
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            console.error("Could not get connection from pool");
+            console.error(err);
+        } else {
+            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,p.paragraphContent FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID WHERE p.active = 1 AND c.url = ?",[pageURL], function (err, results) {
+                if (err) {
+                    console.error("Error while fetching comments from COMMENTS table");
+                    console.error(err);
+                    connection.release();
+                } else {
+                    res.json(results);
                     connection.release();
                 }
             });
