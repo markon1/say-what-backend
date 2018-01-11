@@ -109,7 +109,7 @@ app.post('/getAllCurrent', function (req, res) {
 
 app.post('/getCurrentPage', function (req, res) {
     if (req.body.password == author_password) {
-        getCurrentPage(req.body.url,res);
+        getCurrentPage(req.body.url, res);
     }
 });
 
@@ -265,8 +265,8 @@ function addComment(com, pageVersion, paragraphID, res) {
         } else {
             let date = new Date(Date.now());
             let formattedDate = parseInt(date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
-            connection.query("INSERT INTO comments (comment,rating,position,pageVersion,url,pageName,date,paragraphId) VALUES (?)", [
-                [com.comment, !!com.rating ? com.rating : null, com.position, pageVersion, com.url, /[^/]*$/.exec(com.url)[0], formattedDate, paragraphID]
+            connection.query("INSERT INTO comments (comment,rating,position,pageVersion,url,pageName,date,paragraphId,paragraphText,paragraphBefore,paragraphAfter) VALUES (?)", [
+                [com.comment, !!com.rating ? com.rating : null, com.position, pageVersion, com.url, com.pageName, formattedDate, paragraphID, com.paragraphText, com.paragraphBefore, com.paragraphAfter]
             ], function (err, results) {
                 if (err) {
                     console.error("Error while inserting new comment into COMMENTS table");
@@ -291,8 +291,8 @@ function editComment(com, res) {
         } else {
             let date = new Date(Date.now());
             let formattedDate = parseInt(date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
-            connection.query("UPDATE comments SET comment = ?,rating = ?,position = ?,date = ? WHERE commentID = " + com.id, [
-                com.comment, com.rating, com.position, formattedDate
+            connection.query("UPDATE comments SET comment = ?,rating = ?,position = ?,date = ?, paragraphBefore = ?, paragraphAfter = ?, pageName = ? WHERE commentID = " + com.id, [
+                com.comment, com.rating, com.position, formattedDate, com.paragraphBefore, com.paragraphAfter, com.pageName
             ], function (err, results) {
                 if (err) {
                     console.error("Error while updating comment in COMMENTS table");
@@ -352,13 +352,13 @@ function getComments(pageURL, res) {
     });
 }
 
-function getAll(res){
+function getAll(res) {
     pool.getConnection(function (err, connection) {
         if (err) {
             console.error("Could not get connection from pool");
             console.error(err);
         } else {
-            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,p.paragraphContent,p.active FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID", function (err, results) {
+            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,c.paragraphText,c.paragraphBefore,c.paragraphAfter,p.paragraphContent,p.active FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID", function (err, results) {
                 if (err) {
                     console.error("Error while fetching comments from COMMENTS table");
                     console.error(err);
@@ -372,13 +372,13 @@ function getAll(res){
     });
 }
 
-function getAllCurrent(res){
+function getAllCurrent(res) {
     pool.getConnection(function (err, connection) {
         if (err) {
             console.error("Could not get connection from pool");
             console.error(err);
         } else {
-            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,p.paragraphContent FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID WHERE p.active = 1", function (err, results) {
+            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,c.paragraphText,c.paragraphBefore,c.paragraphAfter,p.paragraphContent FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID WHERE p.active = 1", function (err, results) {
                 if (err) {
                     console.error("Error while fetching comments from COMMENTS table");
                     console.error(err);
@@ -398,7 +398,7 @@ function getCurrentPage(pageURL, res) {
             console.error("Could not get connection from pool");
             console.error(err);
         } else {
-            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,p.paragraphContent FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID WHERE p.active = 1 AND c.url = ?",[pageURL], function (err, results) {
+            connection.query("SELECT c.commentID,c.comment,c.rating,c.position,c.pageVersion,c.url,c.pageName,c.paragraphId,c.paragraphText,c.paragraphBefore,c.paragraphAfter,p.paragraphContent FROM comments c JOIN paragraphs p ON c.paragraphId = p.paragraphID WHERE p.active = 1 AND c.url = ?", [pageURL], function (err, results) {
                 if (err) {
                     console.error("Error while fetching comments from COMMENTS table");
                     console.error(err);
