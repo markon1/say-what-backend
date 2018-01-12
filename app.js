@@ -31,7 +31,7 @@ app.post('/updatePage', function (req, res) {
         correct: true
     });
     if (req.body.password == author_password) {
-        updatePage(req.body.pageURL, req.body.paragraphs);
+        updatePage(req.body.pageURL, req.body.pageName, req.body.paragraphs);
     }
 });
 
@@ -49,6 +49,7 @@ app.post('/checkPassword', function (req, res) {
 
 app.post('/addComment', function (req, res) {
     let url = req.body.comment.url;
+    let pageName = req.body.comment.pageName;
 
     pool.getConnection(function (err, connection) {
         if (err) {
@@ -62,8 +63,8 @@ app.post('/addComment', function (req, res) {
                     connection.release();
                 } else {
                     if (!results.length) {
-                        connection.query("INSERT INTO pages (url,currentVersion) VALUES (?)", [
-                            [url, 1]
+                        connection.query("INSERT INTO pages (url,pageName,currentVersion) VALUES (?)", [
+                            [url, pageName, 1]
                         ], function (err, results) {
                             if (err) {
                                 console.error("Error while inserting new page into PAGES table");
@@ -113,7 +114,7 @@ app.post('/getCurrentPage', function (req, res) {
     }
 });
 
-function updatePage(url, paragraphs) {
+function updatePage(url, pageName, paragraphs) {
     pool.getConnection(function (err, connection) {
         if (err) {
             console.error("Could not get connection from pool");
@@ -126,8 +127,8 @@ function updatePage(url, paragraphs) {
                     connection.release();
                 } else {
                     if (!results.length) {
-                        connection.query("INSERT INTO pages (url,currentVersion) VALUES (?)", [
-                            [url, 1]
+                        connection.query("INSERT INTO pages (url,pageName,currentVersion) VALUES (?)", [
+                            [url, pageName, 1]
                         ], function (err, results) {
                             if (err) {
                                 console.error("Error while inserting new page into PAGES table");
@@ -172,7 +173,7 @@ function updatePage(url, paragraphs) {
                             }
                         });
                     } else {
-                        connection.query("UPDATE pages SET currentVersion = ? WHERE url = ?", [parseInt(results[0].currentVersion) + 1, url], function (err, results) {
+                        connection.query("UPDATE pages SET currentVersion = ?, pageName = ? WHERE url = ?", [parseInt(results[0].currentVersion) + 1, pageName, url], function (err, results) {
                             if (err) {
                                 console.error("Error while inserting new page into PAGES table");
                                 console.error(err);
@@ -236,8 +237,8 @@ function checkParagraph(com, currentVersion, res) {
                     connection.release();
                 } else {
                     if (!results.length) {
-                        connection.query("INSERT INTO paragraphs (paragraphContent,pageURL) VALUES (?)", [
-                            [com.paragraphContent, com.url]
+                        connection.query("INSERT INTO paragraphs (paragraphContent,paragraphText,pageURL) VALUES (?)", [
+                            [com.paragraphContent, com.paragraphText, com.url]
                         ], function (err, results) {
                             if (err) {
                                 console.error("Error while inserting new paragraph into PARAGRAPHS table");
