@@ -114,6 +114,10 @@ app.post('/getCurrentPage', function (req, res) {
     }
 });
 
+app.post('/addTime', function (req, res) {
+    addTime(req.body,res);
+});
+
 function updatePage(url, pageName, paragraphs) {
     pool.getConnection(function (err, connection) {
         if (err) {
@@ -411,6 +415,44 @@ function getCurrentPage(pageURL, res) {
             });
         }
     });
+}
+
+function addTime(body,res){
+    console.log(body);
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            console.error("Could not get connection from pool");
+            console.error(err);
+        } else {
+            connection.query("INSERT INTO visits SET userID=?,pageURL=?,secondsSpent=? ON DUPLICATE KEY UPDATE secondsSpent=secondsSpent+?", [body.userID,body.pageURL,body.secondsSpent,body.secondsSpent], function (err, results) {
+                if (err) {
+                    console.error("Error while inserting into VISITS table");
+                    console.error(err);
+                    connection.release();
+                } else {
+                    connection.query("SELECT MAX(secondsSpent) AS max,MIN(secondsSpent) AS min,AVG(secondsSpent) AS avg,STDDEV(secondsSpent) AS stddev FROM visits WHERE pageURL = ?", [body.pageURL], function (err, results) {
+                        if (err) {
+                            console.error("Error while getting info from VISITS table");
+                            console.error(err);
+                            connection.release();
+                        } else {
+                            let times = results[0];
+                            connection.query("INSERT INTO pages (url,currentVersion,pageName,minTime,maxTime,averageTime,standardDeviation) VALUES (?) ON DUPLICATE KEY UPDATE pageName=VALUES(pageName),minTime=VALUES(minTime),maxTime=VALUES(maxTime),averageTime=VALUES(averageTime),standardDeviation=VALUES(standardDeviation)", [[body.pageURL,1,body.pageName,times.min,times.max,times.avg,times.stddev]], function (err, results) {
+                                if (err) {
+                                    console.error("Error while getting info from VISITS table");
+                                    console.error(err);
+                                    connection.release();
+                                } else {
+                                    res.json({ok:true});
+                                    connection.release();
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });    
 }
 
 app.listen(port);
